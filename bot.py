@@ -1,24 +1,28 @@
+import asyncio
 import logging
 import os
 import yt_dlp
 from aiogram import Bot, Dispatcher, types
-from aiogram.utils import executor
+from aiogram.filters import Command
+from aiogram.types import Message
 
 API_TOKEN = os.getenv("API_TOKEN")
 
 logging.basicConfig(level=logging.INFO)
 
 bot = Bot(token=API_TOKEN)
-dp = Dispatcher(bot)
+dp = Dispatcher()
 
-@dp.message_handler(commands=['start'])
-async def start(message: types.Message):
-    await message.reply("Menga video link tashlang 🎥")
 
-@dp.message_handler()
-async def download_video(message: types.Message):
+@dp.message(Command("start"))
+async def start_handler(message: Message):
+    await message.answer("Menga video link tashlang 🎥")
+
+
+@dp.message()
+async def download_video(message: Message):
     url = message.text
-    await message.reply("⏳ Yuklanmoqda...")
+    await message.answer("⏳ Yuklanmoqda...")
 
     ydl_opts = {
         'outtmpl': 'video.%(ext)s',
@@ -31,12 +35,17 @@ async def download_video(message: types.Message):
 
         for file in os.listdir():
             if file.startswith("video"):
-                await message.reply_video(open(file, 'rb'))
+                await message.answer_video(types.FSInputFile(file))
                 os.remove(file)
                 break
 
-    except:
-        await message.reply("❌ Xatolik yuz berdi")
+    except Exception as e:
+        await message.answer("❌ Xatolik yuz berdi")
 
-if __name__ == '__main__':
-    executor.start_polling(dp, skip_updates=True)
+
+async def main():
+    await dp.start_polling(bot)
+
+
+if __name__ == "__main__":
+    asyncio.run(main())
